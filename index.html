@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>До Дембеля Глеба!</title>
+    <!-- Твой идеальный стикер-фавиконка -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Адаптивный фон: на мобилках один, на ПК — другой */
         .bg-collage {
             background-image: url('bg-mobile.jpg');
         }
@@ -16,7 +18,6 @@
                 background-image: url('bg-desktop.jpg');
             }
         }
-        /* Блокировка прокрутки при открытой модалке */
         .modal-active {
             overflow: hidden;
         }
@@ -24,15 +25,17 @@
 </head>
 <body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen relative flex flex-col items-center py-10 px-4 overflow-x-hidden">
 
+    <!-- ФОН С КОЛЛАЖЕМ -->
     <div class="fixed inset-0 -z-25 bg-collage bg-cover bg-center bg-no-repeat transition-all duration-500"></div>
-    
     <div class="fixed inset-0 -z-20 bg-black/75 backdrop-blur-[2px]"></div>
 
+    <!-- ШАПКА -->
     <header class="text-center mb-8 max-w-xl z-10">
         <h1 class="text-4xl md:text-6xl font-black tracking-wider text-green-500 uppercase drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">Ждем Глеба</h1>
         <p class="text-zinc-300 mt-2 text-base md:text-lg italic font-medium drop-shadow">"Дембель неизбежен, остальное компромисс."</p>
     </header>
 
+    <!-- ТАЙМЕР -->
     <section class="bg-zinc-900/90 p-6 rounded-3xl shadow-2xl w-full max-w-2xl border border-zinc-800/80 text-center mb-10 z-10">
         <h2 class="text-xs md:text-sm font-bold mb-4 text-zinc-400 uppercase tracking-widest">До возвращения осталось:</h2>
         <div class="grid grid-cols-4 gap-3">
@@ -55,6 +58,7 @@
         </div>
     </section>
 
+    <!-- СТЕНА СООБЩЕНИЙ -->
     <main class="w-full max-w-2xl flex flex-col items-center z-10">
         <button id="openModalBtn" class="mb-10 px-8 py-4 bg-green-600 hover:bg-green-500 text-white font-extrabold rounded-2xl transition-all duration-200 transform hover:scale-105 shadow-lg shadow-green-950/50 uppercase tracking-wider">
             ✍️ Написать Глебу весточку
@@ -68,12 +72,11 @@
         </div>
     </main>
 
+    <!-- МОДАЛЬНОЕ ОКНО -->
     <div id="modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden z-50">
         <div class="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 w-full max-w-md shadow-2xl relative">
             <button id="closeModalBtn" class="absolute top-4 right-4 text-zinc-400 hover:text-white text-2xl font-bold">&times;</button>
-            
             <h3 class="text-xl font-black mb-4 text-zinc-100 uppercase tracking-wider">Оставить весточку</h3>
-            
             <form id="msgForm" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-zinc-400 uppercase mb-1">Представься</label>
@@ -101,14 +104,11 @@
     <script>
         // === НАСТРОЙКИ SUPABASE ===
         const SUPABASE_URL = "https://aapjclowooxnwlrxemlx.supabase.co";
-        // !!! СЮДА ВСТАВЬ СВОЙ PUBLISHABLE KEY !!!
+        // !!! ТВОЙ PUBLISHABLE KEY СЮДА !!!
         const SUPABASE_KEY = "sb_publishable_l7vr4qMe9bYb_45qfIVg0w_vxpepHOi"; 
-        
-        // Пофиксил конфликт имен: теперь клиент называется supabaseClient
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // === НАСТРОЙКА ТАЙМЕРА ===
-        // Дата возвращения Глеба: 16 июня 2027 года
         const targetDate = new Date(2027, 5, 17, 10, 0, 0).getTime(); 
 
         function updateTimer() {
@@ -166,6 +166,7 @@
             const { data, error } = await supabaseClient
                 .from('messages')
                 .select('*')
+                .order('is_pinned', { ascending: false })
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -186,13 +187,26 @@
                 
                 let imgHtml = '';
                 if (msg.image_url && msg.image_url.trim() !== '') {
-                    imgHtml = `<img src="${msg.image_url}" class="mt-4 rounded-2xl max-h-80 object-cover w-full border border-zinc-800" alt="Вложение" onerror="this.style.display='none'">`;
+                    // ИСПРАВЛЕНО: object-contain вместо object-cover + фоновая подложка bg-black/30
+                    imgHtml = `<img src="${msg.image_url}" class="mt-4 rounded-2xl max-h-[450px] w-full object-contain bg-black/30 border border-zinc-800/50" alt="Вложение" onerror="this.style.display='none'">`;
                 }
 
+                const isPinned = msg.is_pinned === true;
+                const cardStyle = isPinned 
+                    ? "bg-zinc-900/90 border-2 border-green-500/80 shadow-[0_0_15px_rgba(34,197,94,0.2)]" 
+                    : "bg-zinc-900/80 border border-zinc-800/60";
+
+                const pinBadge = isPinned 
+                    ? `<span class="text-xs bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-lg font-bold flex items-center gap-1">📌 Закреплено</span>` 
+                    : '';
+
                 return `
-                    <div class="bg-zinc-900/80 p-5 rounded-2xl border border-zinc-800/60 shadow-md backdrop-blur-sm">
+                    <div class="p-5 rounded-2xl shadow-md backdrop-blur-sm transition-all duration-300 ${cardStyle}">
                         <div class="flex justify-between items-center mb-3">
-                            <span class="font-extrabold text-green-400 text-base">${msg.name}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-extrabold text-green-400 text-base">${msg.name}</span>
+                                ${pinBadge}
+                            </div>
                             <span class="text-xs text-zinc-500">${date}</span>
                         </div>
                         <p class="text-zinc-200 whitespace-pre-line text-sm md:text-base leading-relaxed">${msg.message}</p>
