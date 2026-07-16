@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>До Дембеля Глеба!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Адаптивный фон: на мобилках один, на ПК — другой */
+        .bg-collage {
+            background-image: url('bg-mobile.jpg');
+        }
+        @media (min-width: 768px) {
+            .bg-collage {
+                background-image: url('bg-desktop.jpg');
+            }
+        }
+        /* Блокировка прокрутки при открытой модалке */
+        .modal-active {
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen relative flex flex-col items-center py-10 px-4 overflow-x-hidden">
+
+    <div class="fixed inset-0 -z-25 bg-collage bg-cover bg-center bg-no-repeat transition-all duration-500"></div>
+    
+    <div class="fixed inset-0 -z-20 bg-black/75 backdrop-blur-[2px]"></div>
+
+    <header class="text-center mb-8 max-w-xl z-10">
+        <h1 class="text-4xl md:text-6xl font-black tracking-wider text-green-500 uppercase drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">Ждем Глеба</h1>
+        <p class="text-zinc-300 mt-2 text-base md:text-lg italic font-medium drop-shadow">"Дембель неизбежен, остальное компромисс."</p>
+    </header>
+
+    <section class="bg-zinc-900/90 p-6 rounded-3xl shadow-2xl w-full max-w-2xl border border-zinc-800/80 text-center mb-10 z-10">
+        <h2 class="text-xs md:text-sm font-bold mb-4 text-zinc-400 uppercase tracking-widest">До возвращения осталось:</h2>
+        <div class="grid grid-cols-4 gap-3">
+            <div class="bg-zinc-950/80 p-3 md:p-5 rounded-2xl border border-zinc-800">
+                <span id="days" class="text-3xl md:text-5xl font-black text-green-400">00</span>
+                <p class="text-[10px] md:text-xs text-zinc-500 uppercase mt-1">Дней</p>
+            </div>
+            <div class="bg-zinc-950/80 p-3 md:p-5 rounded-2xl border border-zinc-800">
+                <span id="hours" class="text-3xl md:text-5xl font-black text-green-400">00</span>
+                <p class="text-[10px] md:text-xs text-zinc-500 uppercase mt-1">Часов</p>
+            </div>
+            <div class="bg-zinc-950/80 p-3 md:p-5 rounded-2xl border border-zinc-800">
+                <span id="minutes" class="text-3xl md:text-5xl font-black text-green-400">00</span>
+                <p class="text-[10px] md:text-xs text-zinc-500 uppercase mt-1">Минут</p>
+            </div>
+            <div class="bg-zinc-950/80 p-3 md:p-5 rounded-2xl border border-zinc-800">
+                <span id="seconds" class="text-3xl md:text-5xl font-black text-green-400">00</span>
+                <p class="text-[10px] md:text-xs text-zinc-500 uppercase mt-1">Секунд</p>
+            </div>
+        </div>
+    </section>
+
+    <main class="w-full max-w-2xl flex flex-col items-center z-10">
+        <button id="openModalBtn" class="mb-10 px-8 py-4 bg-green-600 hover:bg-green-500 text-white font-extrabold rounded-2xl transition-all duration-200 transform hover:scale-105 shadow-lg shadow-green-950/50 uppercase tracking-wider">
+            ✍️ Написать Глебу весточку
+        </button>
+
+        <div class="w-full">
+            <h3 class="text-2xl font-black mb-6 text-zinc-200 border-b border-zinc-800/80 pb-3 uppercase tracking-wide drop-shadow">Стена почета</h3>
+            <div id="wall" class="space-y-4">
+                <p class="text-zinc-500 text-center">Загружаем весточки...</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 w-full max-w-md shadow-2xl relative">
+            <button id="closeModalBtn" class="absolute top-4 right-4 text-zinc-400 hover:text-white text-2xl font-bold">&times;</button>
+            
+            <h3 class="text-xl font-black mb-4 text-zinc-100 uppercase tracking-wider">Оставить весточку</h3>
+            
+            <form id="msgForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-zinc-400 uppercase mb-1">Представься</label>
+                    <input type="text" id="author" placeholder="Твое имя / ник" required 
+                        class="w-full p-3 bg-zinc-950 border border-zinc-850 rounded-xl text-white focus:outline-none focus:border-green-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-400 uppercase mb-1">Сообщение</label>
+                    <textarea id="message" placeholder="Пиши че хочешь..." required rows="4"
+                        class="w-full p-3 bg-zinc-950 border border-zinc-850 rounded-xl text-white focus:outline-none focus:border-green-500 transition"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-400 uppercase mb-1">Ссылка на картинку/мем</label>
+                    <input type="text" id="imageUrl" placeholder="https://example.com/meme.jpg (необязательно)" 
+                        class="w-full p-3 bg-zinc-950 border border-zinc-850 rounded-xl text-white focus:outline-none focus:border-green-500 transition">
+                </div>
+                <button type="submit" 
+                    class="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition duration-200 uppercase tracking-widest text-sm shadow-md">
+                    Отправить на стену
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // === НАСТРОЙКИ SUPABASE ===
+        const SUPABASE_URL = "https://aapjclowooxnwlrxemlx.supabase.co";
+        // !!! СЮДА ВСТАВЬ СВОЙ PUBLISHABLE KEY !!!
+        const SUPABASE_KEY = "sb_publishable_l7vr4qMe9bYb_45qfIVg0w_vxpepHOi"; 
+        
+        // Пофиксил конфликт имен: теперь клиент называется supabaseClient
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // === НАСТРОЙКА ТАЙМЕРА ===
+        // Дата возвращения Глеба: 16 июня 2027 года
+        const targetDate = new Date(2027, 5, 17, 10, 0, 0).getTime(); 
+
+        function updateTimer() {
+            const now = new Date().getTime();
+            const difference = targetDate - now;
+
+            if (difference < 0) {
+                document.getElementById("days").innerText = "00";
+                document.getElementById("hours").innerText = "00";
+                document.getElementById("minutes").innerText = "00";
+                document.getElementById("seconds").innerText = "00";
+                return;
+            }
+
+            const d = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const h = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((difference % (1000 * 60)) / 1000);
+
+            document.getElementById("days").innerText = d < 10 ? '0' + d : d;
+            document.getElementById("hours").innerText = h < 10 ? '0' + h : h;
+            document.getElementById("minutes").innerText = m < 10 ? '0' + m : m;
+            document.getElementById("seconds").innerText = s < 10 ? '0' + s : s;
+        }
+        setInterval(updateTimer, 1000);
+        updateTimer();
+
+        // === УПРАВЛЕНИЕ МОДАЛКОЙ ===
+        const modal = document.getElementById('modal');
+        const openModalBtn = document.getElementById('openModalBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+
+        openModalBtn.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            document.body.classList.add('modal-active');
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            document.body.classList.remove('modal-active');
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+                document.body.classList.remove('modal-active');
+            }
+        });
+
+        // === РАБОТА СО СТЕНОЙ ===
+        const wall = document.getElementById('wall');
+        const form = document.getElementById('msgForm');
+
+        async function loadMessages() {
+            const { data, error } = await supabaseClient
+                .from('messages')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error(error);
+                wall.innerHTML = '<p class="text-red-500 text-center">Не удалось загрузить стену :(</p>';
+                return;
+            }
+
+            if (data.length === 0) {
+                wall.innerHTML = '<p class="text-zinc-500 text-center">Тут пока пусто. Будь первым, кто напишет!</p>';
+                return;
+            }
+
+            wall.innerHTML = data.map(msg => {
+                const date = new Date(msg.created_at).toLocaleDateString('ru-RU', {
+                    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                });
+                
+                let imgHtml = '';
+                if (msg.image_url && msg.image_url.trim() !== '') {
+                    imgHtml = `<img src="${msg.image_url}" class="mt-4 rounded-2xl max-h-80 object-cover w-full border border-zinc-800" alt="Вложение" onerror="this.style.display='none'">`;
+                }
+
+                return `
+                    <div class="bg-zinc-900/80 p-5 rounded-2xl border border-zinc-800/60 shadow-md backdrop-blur-sm">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-extrabold text-green-400 text-base">${msg.name}</span>
+                            <span class="text-xs text-zinc-500">${date}</span>
+                        </div>
+                        <p class="text-zinc-200 whitespace-pre-line text-sm md:text-base leading-relaxed">${msg.message}</p>
+                        ${imgHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('author').value;
+            const message = document.getElementById('message').value;
+            const imageUrl = document.getElementById('imageUrl').value;
+
+            const { error } = await supabaseClient
+                .from('messages')
+                .insert([{ name, message, image_url: imageUrl }]);
+
+            if (error) {
+                alert('Бля, ошибка при отправке!');
+                console.error(error);
+            } else {
+                form.reset();
+                modal.classList.add('hidden');
+                document.body.classList.remove('modal-active');
+                loadMessages();
+            }
+        });
+
+        loadMessages();
+    </script>
+</body>
+</html>
