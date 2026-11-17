@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>До Дембеля Глеба!</title>
-    <!-- Твой идеальный стикер-фавиконка -->
     <link rel="icon" type="image/png" href="favicon.png">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -24,18 +22,12 @@
     </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen relative flex flex-col items-center py-10 px-4 overflow-x-hidden">
-
-    <!-- ФОН С КОЛЛАЖЕМ -->
     <div class="fixed inset-0 -z-25 bg-collage bg-cover bg-center bg-no-repeat transition-all duration-500"></div>
     <div class="fixed inset-0 -z-20 bg-black/75 backdrop-blur-[2px]"></div>
-
-    <!-- ШАПКА -->
     <header class="text-center mb-8 max-w-xl z-10">
         <h1 class="text-4xl md:text-6xl font-black tracking-wider text-green-500 uppercase drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">Ждем Глеба</h1>
         <p class="text-zinc-300 mt-2 text-base md:text-lg italic font-medium drop-shadow">"Дембель неизбежен, остальное компромисс."</p>
     </header>
-
-    <!-- ТАЙМЕР -->
     <section class="bg-zinc-900/90 p-6 rounded-3xl shadow-2xl w-full max-w-2xl border border-zinc-800/80 text-center mb-10 z-10">
         <h2 class="text-xs md:text-sm font-bold mb-4 text-zinc-400 uppercase tracking-widest">До возвращения осталось:</h2>
         <div class="grid grid-cols-4 gap-3">
@@ -57,13 +49,10 @@
             </div>
         </div>
     </section>
-
-    <!-- СТЕНА СООБЩЕНИЙ -->
     <main class="w-full max-w-2xl flex flex-col items-center z-10">
         <button id="openModalBtn" class="mb-10 px-8 py-4 bg-green-600 hover:bg-green-500 text-white font-extrabold rounded-2xl transition-all duration-200 transform hover:scale-105 shadow-lg shadow-green-950/50 uppercase tracking-wider">
             ✍️ Написать Глебу весточку
         </button>
-
         <div class="w-full">
             <h3 class="text-2xl font-black mb-6 text-zinc-200 border-b border-zinc-800/80 pb-3 uppercase tracking-wide drop-shadow">Стена почета</h3>
             <div id="wall" class="space-y-4">
@@ -71,8 +60,6 @@
             </div>
         </div>
     </main>
-
-    <!-- МОДАЛЬНОЕ ОКНО -->
     <div id="modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden z-50">
         <div class="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 w-full max-w-md shadow-2xl relative">
             <button id="closeModalBtn" class="absolute top-4 right-4 text-zinc-400 hover:text-white text-2xl font-bold">&times;</button>
@@ -100,21 +87,14 @@
             </form>
         </div>
     </div>
-
     <script>
-        // === НАСТРОЙКИ SUPABASE ===
         const SUPABASE_URL = "https://aapjclowooxnwlrxemlx.supabase.co";
-        // !!! ТВОЙ PUBLISHABLE KEY СЮДА !!!
         const SUPABASE_KEY = "sb_publishable_l7vr4qMe9bYb_45qfIVg0w_vxpepHOi"; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // === НАСТРОЙКА ТАЙМЕРА ===
         const targetDate = new Date(2027, 5, 17, 10, 0, 0).getTime(); 
-
         function updateTimer() {
             const now = new Date().getTime();
             const difference = targetDate - now;
-
             if (difference < 0) {
                 document.getElementById("days").innerText = "00";
                 document.getElementById("hours").innerText = "00";
@@ -122,12 +102,10 @@
                 document.getElementById("seconds").innerText = "00";
                 return;
             }
-
             const d = Math.floor(difference / (1000 * 60 * 60 * 24));
             const h = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const m = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
             const s = Math.floor((difference % (1000 * 60)) / 1000);
-
             document.getElementById("days").innerText = d < 10 ? '0' + d : d;
             document.getElementById("hours").innerText = h < 10 ? '0' + h : h;
             document.getElementById("minutes").innerText = m < 10 ? '0' + m : m;
@@ -135,32 +113,41 @@
         }
         setInterval(updateTimer, 1000);
         updateTimer();
-
-        // === УПРАВЛЕНИЕ МОДАЛКОЙ ===
         const modal = document.getElementById('modal');
         const openModalBtn = document.getElementById('openModalBtn');
         const closeModalBtn = document.getElementById('closeModalBtn');
-
         openModalBtn.addEventListener('click', () => {
             modal.classList.remove('hidden');
             document.body.classList.add('modal-active');
         });
-
         closeModalBtn.addEventListener('click', () => {
             modal.classList.add('hidden');
             document.body.classList.remove('modal-active');
         });
-
         window.addEventListener('click', (e) => {
             if (e.target === modal) {
                 modal.classList.add('hidden');
                 document.body.classList.remove('modal-active');
             }
         });
-
-        // === РАБОТА СО СТЕНОЙ ===
         const wall = document.getElementById('wall');
         const form = document.getElementById('msgForm');
+
+        const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        function esc(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ESCAPES[ch]);
+        }
+
+        function safeImageUrl(raw) {
+            const url = String(raw ?? '').trim();
+            if (!/^https?:\/\//i.test(url)) return '';
+            try {
+                const parsed = new URL(url);
+                return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? parsed.href : '';
+            } catch {
+                return '';
+            }
+        }
 
         async function loadMessages() {
             const { data, error } = await supabaseClient
@@ -168,64 +155,56 @@
                 .select('*')
                 .order('is_pinned', { ascending: false })
                 .order('created_at', { ascending: false });
-
             if (error) {
                 console.error(error);
                 wall.innerHTML = '<p class="text-red-500 text-center">Не удалось загрузить стену :(</p>';
                 return;
             }
-
             if (data.length === 0) {
                 wall.innerHTML = '<p class="text-zinc-500 text-center">Тут пока пусто. Будь первым, кто напишет!</p>';
                 return;
             }
-
             wall.innerHTML = data.map(msg => {
                 const date = new Date(msg.created_at).toLocaleDateString('ru-RU', {
                     day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
                 });
-                
                 let imgHtml = '';
-                if (msg.image_url && msg.image_url.trim() !== '') {
-                    // ИСПРАВЛЕНО: object-contain вместо object-cover + фоновая подложка bg-black/30
-                    imgHtml = `<img src="${msg.image_url}" class="mt-4 rounded-2xl max-h-[450px] w-full object-contain bg-black/30 border border-zinc-800/50" alt="Вложение" onerror="this.style.display='none'">`;
+                const imageUrl = safeImageUrl(msg.image_url);
+                if (imageUrl) {
+                    imgHtml = `<img src="${esc(imageUrl)}" class="mt-4 rounded-2xl max-h-[450px] w-full object-contain bg-black/30 border border-zinc-800/50" alt="Вложение" onerror="this.style.display='none'">`;
                 }
-
                 const isPinned = msg.is_pinned === true;
                 const cardStyle = isPinned 
                     ? "bg-zinc-900/90 border-2 border-green-500/80 shadow-[0_0_15px_rgba(34,197,94,0.2)]" 
                     : "bg-zinc-900/80 border border-zinc-800/60";
-
                 const pinBadge = isPinned 
                     ? `<span class="text-xs bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-lg font-bold flex items-center gap-1">📌 Закреплено</span>` 
                     : '';
-
                 return `
                     <div class="p-5 rounded-2xl shadow-md backdrop-blur-sm transition-all duration-300 ${cardStyle}">
                         <div class="flex justify-between items-center mb-3">
                             <div class="flex items-center gap-2">
-                                <span class="font-extrabold text-green-400 text-base">${msg.name}</span>
+                                <span class="font-extrabold text-green-400 text-base">${esc(msg.name)}</span>
                                 ${pinBadge}
                             </div>
                             <span class="text-xs text-zinc-500">${date}</span>
                         </div>
-                        <p class="text-zinc-200 whitespace-pre-line text-sm md:text-base leading-relaxed">${msg.message}</p>
+                        <p class="text-zinc-200 whitespace-pre-line text-sm md:text-base leading-relaxed">${esc(msg.message)}</p>
                         ${imgHtml}
                     </div>
                 `;
             }).join('');
         }
-
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('author').value;
-            const message = document.getElementById('message').value;
-            const imageUrl = document.getElementById('imageUrl').value;
+            const name = document.getElementById('author').value.trim();
+            const message = document.getElementById('message').value.trim();
+            const imageUrl = safeImageUrl(document.getElementById('imageUrl').value);
 
+            if (!name || !message) return;
             const { error } = await supabaseClient
                 .from('messages')
                 .insert([{ name, message, image_url: imageUrl }]);
-
             if (error) {
                 alert('Бля, ошибка при отправке!');
                 console.error(error);
@@ -236,7 +215,6 @@
                 loadMessages();
             }
         });
-
         loadMessages();
     </script>
 </body>
